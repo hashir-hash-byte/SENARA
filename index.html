@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Senara – Women’s & Kids’ Collection</title>
+<!--
+  SENARA STOREFRONT
+  Folder layout:
+    index.html      this page (structure only)
+    css/style.css   all the styling
+    js/data.js      products, names, prices, photos  <- edit this to change products
+    js/app.js       shop logic (cart, animation, admin)
+    images/         product photos (look1.png ... look6.png)
+-->
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="intro">
+
+<div id="splash"><div class="disc"><span class="wordmark" id="splashName">Senara</span></div></div>
+
+<div id="shop">
+  <header>
+    <span class="wordmark" id="logo">Senara</span>
+  </header>
+  <main>
+    <div class="hero" id="hero"><div class="track" id="track"></div><div class="dots" id="dots"></div></div>
+    <nav id="tabs">
+      <button id="homeBtn">Home</button>
+      <button id="catBtn">Categories</button>
+      <button id="cartBtn">Cart (<span id="cartCount">0</span>)</button>
+      <button id="accBtn">Account</button>
+    </nav>
+    <h2 class="sec" id="catTitle">Shop by category</h2>
+    <div class="cats" id="cats"></div>
+    <h2 class="sec" id="trendTitle">Trending now</h2>
+    <div class="grid" id="trending"></div>
+  </main>
+</div>
+
+<!-- Category animation overlay -->
+<div id="stage" aria-live="polite">
+  <span class="wordmark" id="sBrand">Senara</span>
+  <button id="sClose" aria-label="Close">✕</button>
+  <div id="sTitle"></div>
+  <div id="sCar"></div>
+  <div id="sInfo"></div>
+  <div id="sStrip"></div>
+</div>
+
+<!-- Cart drawer -->
+<aside id="cart" aria-label="Cart">
+  <header><span class="wordmark">Your cart</span><button id="cartClose">Close</button></header>
+  <div id="cartItems"></div>
+  <div class="total"><span>Total</span><span id="cartTotal">₹0</span></div>
+  <div style="padding:0 14px calc(14px + env(safe-area-inset-bottom,0px))"><button class="btn" id="orderBtn" style="width:100%;padding:12px">Place order</button></div>
+</aside>
+
+<!-- Account drawer -->
+<aside id="acct" aria-label="Account">
+  <header><span class="wordmark">Your account</span><button id="acctClose">Close</button></header>
+  <div id="acctBody" style="flex:1;overflow:auto;padding:12px 14px"></div>
+</aside>
+
+<!-- Admin view (open with #admin) -->
+<div id="admin" class="hidden">
+  <header><span class="wordmark">Senara admin</span><button id="backShop">View shop</button></header>
+  <main id="adminBody"></main>
+</div>
+
+<!-- Product detail page -->
+<div id="detail" aria-label="Product details">
+  <header><button id="dClose">← Back</button><span class="wordmark">Senara</span></header>
+  <div id="dBody"></div>
+</div>
+
+<div id="toast"></div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
