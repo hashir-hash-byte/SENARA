@@ -13,6 +13,9 @@
     js/app.js       shop logic (cart, animation, admin)
     images/         product photos (look1.png ... look6.png)
 -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body class="intro">
@@ -20,22 +23,47 @@
 <div id="splash"><div class="disc"><span class="wordmark" id="splashName">Senara</span></div></div>
 
 <div id="shop">
-  <header>
-    <span class="wordmark" id="logo">Senara</span>
+  <header class="shop-header">
+    <a class="brand-lockup" href="#" aria-label="Senara home"><span class="wordmark" id="logo">Senara</span><small>WOMEN’S &amp; KIDS’ COLLECTION</small></a>
+    <label class="shop-search" aria-label="Search products">
+      <input id="productSearch" type="search" placeholder="Search dresses, collections..." autocomplete="off">
+      <button id="searchBtn" type="button" aria-label="Search">⌕</button>
+    </label>
+    <div class="header-actions">
+      <button id="accBtn" aria-label="Account" title="Account">♙</button>
+      <button id="cartBtn" aria-label="Cart" title="Cart">♧ <span id="cartCount">0</span></button>
+    </div>
   </header>
   <main>
-    <div class="hero" id="hero"><div class="track" id="track"></div><div class="dots" id="dots"></div></div>
+    <div class="hero homeonly" id="hero"><div class="track" id="track"></div><div class="dots" id="dots"></div></div>
     <nav id="tabs">
       <button id="homeBtn">Home</button>
       <button id="catBtn">Categories</button>
-      <button id="cartBtn">Cart (<span id="cartCount">0</span>)</button>
-      <button id="accBtn">Account</button>
+
     </nav>
     <h2 class="sec" id="catTitle">Shop by category</h2>
     <div class="cats" id="cats"></div>
-    <h2 class="sec" id="trendTitle">Trending now</h2>
-    <div class="grid" id="trending"></div>
+    <h2 class="sec homeonly" id="trendTitle">New arrivals</h2>
+    <div class="rail homeonly" id="trending"></div>
+    <section class="story homeonly">
+      <h2>Feel the quality.</h2>
+      <p id="storyText"></p>
+      <a class="cta" href="https://www.instagram.com/senara.clothing/" target="_blank" rel="noopener">Follow on Instagram</a>
+    </section>
+    <section class="visit homeonly" id="visit">
+      <h2 id="vTag"></h2>
+      <div class="vrows">
+        <div><span class="vl">WhatsApp and mobile</span><b id="vPhone"></b></div>
+        <div><span class="vl">Visit the shop</span><b id="vAddr"></b></div>
+      </div>
+      <div class="vbtns">
+        <a class="cta" id="vWa" target="_blank" rel="noopener">Chat on WhatsApp</a>
+        <a class="cta ghost" id="vCall">Call us</a>
+        <a class="cta ghost" id="vMap" target="_blank" rel="noopener">Get directions</a>
+      </div>
+    </section>
   </main>
+  <footer class="foot"><span class="wordmark">Senara</span><a href="https://www.instagram.com/senara.clothing/" target="_blank" rel="noopener">Instagram</a></footer>
 </div>
 
 <!-- Category animation overlay -->
@@ -53,7 +81,7 @@
   <header><span class="wordmark">Your cart</span><button id="cartClose">Close</button></header>
   <div id="cartItems"></div>
   <div class="total"><span>Total</span><span id="cartTotal">₹0</span></div>
-  <div style="padding:0 14px calc(14px + env(safe-area-inset-bottom,0px))"><button class="btn" id="orderBtn" style="width:100%;padding:12px">Place order</button></div>
+  <div class="cart-actions" style="padding:0 14px calc(14px + env(safe-area-inset-bottom,0px))"><button class="btn" id="orderBtn" style="width:100%;padding:12px">Place order</button><button class="btn whatsapp-btn" id="waOrderBtn" type="button">Place order on WhatsApp</button></div>
 </aside>
 
 <!-- Account drawer -->
