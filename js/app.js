@@ -22,7 +22,7 @@ const KEY='senara-store-'+DATA_VERSION;
 function load(){try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r)}catch(e){}return seed()}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(db));return true}catch(e){toast('Browser storage is full. Use fewer or smaller photos (the real backend removes this limit).');return false}}
 // Make sure every product has the newer fields (older saved data may not).
-const norm=d=>{d.products.forEach(p=>{p.img=p.img||'';p.gallery=Array.isArray(p.gallery)?p.gallery:[];['sizes','desc','fabric','includes','ornament'].forEach(k=>p[k]=p[k]||'')});return d};
+const norm=d=>{const S=seed().shop;['story','tagline','phone','address','map'].forEach(k=>d.shop[k]=d.shop[k]||S[k]);d.banners.forEach(b=>b.pid=b.pid||'');d.products.forEach(p=>{p.img=p.img||'';p.gallery=Array.isArray(p.gallery)?p.gallery:[];['sizes','desc','fabric','includes','ornament'].forEach(k=>p[k]=p[k]||'')});return d};
 let db=norm(load());
 let cart=[];
 try{cart=JSON.parse(localStorage.getItem('senara-cart')||'[]')}catch(e){}
@@ -43,30 +43,66 @@ setTimeout(()=>$('splash').classList.add('out'),3800);
 
 /* ===== 3. HOME ===== */
 let slideIx=0,slideTimer;
+function startSlides(){clearInterval(slideTimer);slideTimer=setInterval(()=>goSlide((slideIx+1)%Math.max(db.banners.length,1)),3500)}
 function renderHome(){
   document.title=db.shop.name+' – Women’s & Kids’ Collection';
   ['logo','sBrand'].forEach(i=>$(i).textContent=db.shop.name);
-  $('track').innerHTML=db.banners.map(b=>`<div class="slide" style="background:linear-gradient(120deg,${esc(b.color)},#0F1216)"><h3>${esc(b.title)}</h3><p>${esc(b.sub)}</p>${fig('#E6E1DA',b.kind)}</div>`).join('');
+  $('storyText').textContent=db.shop.story||'';
+  // Shop details: WhatsApp / call / map links are built from the admin fields.
+  const sh=db.shop,dg=(sh.phone||'').replace(/\D/g,''),full=dg.length===10?'91'+dg:dg;
+  $('vTag').textContent=sh.tagline||'';
+  $('vPhone').textContent=dg.length===10?'+91 '+dg.slice(0,5)+' '+dg.slice(5):(sh.phone||'');
+  $('vAddr').textContent=sh.address||'';
+  $('vWa').href='https://wa.me/'+full+'?text='+encodeURIComponent('Hi Senara, I have a question about your collection.');
+  $('vCall').href='tel:+'+full;
+  $('vMap').href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(sh.map||sh.address||'');
+  // Hero: headline sits behind the model photo.
+  $('track').innerHTML=db.banners.map(b=>{
+    const p=prod(b.pid),cid=b.cat||(db.categories[0]||{}).id||'';
+    const ph=p&&p.img?`<img class="sphoto" src="${esc(p.img)}" alt="">`:fig('#E6E1DA',b.kind);
+    return `<div class="slide" style="background:radial-gradient(120% 90% at 80% 30%,${esc(b.color)},#2B1A16)"><h3>${esc(b.title)}</h3>${ph}<div class="sbot"><p>${esc(b.sub)}</p>${cid?`<button class="cta" data-cat="${esc(cid)}">Shop now</button>`:''}</div></div>`}).join('');
   $('dots').innerHTML=db.banners.map(()=>'<i></i>').join('');
-  $('cats').innerHTML=db.categories.map(c=>`<button class="cat" data-cat="${esc(c.id)}"><div class="ico">${fig('#6B1F26',c.kind)}</div>${esc(c.name)}</button>`).join('');
-  $('trending').innerHTML=db.products.slice(0,8).map(p=>`
-    <div class="pcard" data-view="${esc(p.id)}" style="cursor:pointer"><div class="pimg">${pic(p)}</div><div class="pinfo"><b>${esc(p.name)}</b><span>${inr(p.price)}</span>
-    <button class="add" data-view="${esc(p.id)}">View details</button></div></div>`).join('');
-  goSlide(0);clearInterval(slideTimer);
-  slideTimer=setInterval(()=>goSlide((slideIx+1)%Math.max(db.banners.length,1)),3500);
+  // Categories: a fan of up to 3 model photos per card.
+  $('cats').innerHTML=db.categories.map(c=>{
+    const ps=db.products.filter(p=>p.cat===c.id&&p.img).slice(0,3);
+    const art=ps.length?ps.map((p,i)=>`<img class="cc c${i}" src="${esc(p.img)}" alt="">`).join(''):fig('#6B1F26',c.kind);
+    return `<button class="cat" data-cat="${esc(c.id)}">${art}<span class="lbl"><b>${esc(c.name)}</b><span class="pill">Shop now</span></span></button>`}).join('');
+  // New arrivals: newest products first.
+  $('trending').innerHTML=[...db.products].reverse().slice(0,8).map(p=>`
+    <div class="pcard" data-view="${esc(p.id)}"><div class="pimg">${pic(p)}</div><div class="pinfo"><b>${esc(p.name)}</b><span>${inr(p.price)}</span></div></div>`).join('');
+  goSlide(0);startSlides();
 }
 function goSlide(i){slideIx=i;$('track').style.transform=`translateX(-${i*100}%)`;
   [...$('dots').children].forEach((d,k)=>d.classList.toggle('on',k===i))}
-// Home = banner + trending. Categories = only the category tiles.
+// Swipe the hero with a finger.
+let tx0=null;
+$('hero').addEventListener('touchstart',e=>{tx0=e.touches[0].clientX},{passive:true});
+$('hero').addEventListener('touchend',e=>{if(tx0===null)return;const dx=e.changedTouches[0].clientX-tx0;tx0=null;
+  if(Math.abs(dx)>40){const n=Math.max(db.banners.length,1);goSlide((slideIx+(dx<0?1:-1)+n)%n);startSlides()}});
+// Home = hero + new arrivals + story. Categories tab = only the category cards.
 function showView(v){
-  ['hero','trendTitle','trending'].forEach(i=>$(i).classList.toggle('hidden',v==='cats'));
-  $('cats').classList.toggle('big',v==='cats');
+  document.querySelectorAll('.homeonly').forEach(el=>el.classList.toggle('hidden',v==='cats'));
   $('homeBtn').classList.toggle('on',v==='home');$('catBtn').classList.toggle('on',v==='cats');
   $('catTitle').textContent=v==='cats'?'Women’s wear':'Shop by category';
 }
 const nav=v=>{closeDetail();closeStage();$('cart').classList.remove('open');$('acct').classList.remove('open');showView(v);scrollTo({top:0})};
 $('homeBtn').onclick=()=>nav('home');
 $('catBtn').onclick=()=>nav('cats');
+
+/* Header product search */
+function runProductSearch(){
+  const q=$('productSearch').value.trim().toLowerCase();
+  if(!q){renderHome();showView('home');return}
+  closeDetail();closeStage();$('cart').classList.remove('open');$('acct').classList.remove('open');
+  document.querySelectorAll('.homeonly').forEach(el=>el.classList.add('hidden'));
+  $('catTitle').textContent='Search results';
+  const matches=db.products.filter(p=>(p.name+' '+p.desc+' '+p.fabric+' '+p.ornament).toLowerCase().includes(q));
+  $('cats').innerHTML=matches.length?matches.map(p=>`<button class="cat search-result" data-view="${esc(p.id)}">${pic(p)}<span class="lbl"><b>${esc(p.name)}</b><span class="pill">${inr(p.price)} · View</span></span></button>`).join(''):'<p class="empty">No products found. Try another search.</p>';
+  scrollTo({top:0,behavior:'smooth'});
+}
+$('searchBtn').onclick=runProductSearch;
+$('productSearch').addEventListener('keydown',e=>{if(e.key==='Enter')runProductSearch()});
+$('productSearch').addEventListener('search',runProductSearch);
 
 /* ===== 4. CATEGORY ANIMATION ===== */
 // Black screen + typed headline -> dresses rise -> black-to-white wipe -> product strip slides up.
@@ -127,7 +163,11 @@ function renderDetail(){
     <div><div class="gal" id="gal">${slides}</div><div class="gdots" id="gdots">${imgs.length>1?imgs.map((_,i)=>`<i${i===0?' class="on"':''}></i>`).join(''):''}</div></div>
     <div class="dinfo"><h1>${esc(p.name)}</h1><div class="dprice">${inr(p.price)}</div>
       ${sizes.length?`<div class="dlab">Select size</div><div class="chips">${sizes.map(x=>`<button class="chip" data-size="${esc(x)}">${esc(x)}</button>`).join('')}</div>`:''}
-      <button class="btn big" id="dAdd">Add to cart</button>
+      <div class="purchase-actions">
+        <button class="btn big" id="dAdd">Add to cart</button>
+        <button class="btn big buy-now" id="dBuy">Buy now</button>
+      </div>
+      <button class="btn whatsapp-btn detail-wa" id="dWhatsApp" type="button">Place order on WhatsApp</button>
       ${p.desc?`<p class="ddesc">${esc(p.desc)}</p>`:''}
       ${rows.length?`<dl class="dl">${rows.map(([k,v])=>`<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}</dl>`:''}
     </div></div>`;
@@ -139,13 +179,42 @@ $('dBody').addEventListener('click',e=>{
   if(z){dSize=z.dataset.size;[...document.querySelectorAll('.chip')].forEach(b=>b.classList.toggle('on',b.dataset.size===dSize));return}
   if(e.target.id==='dAdd'){
     if(dP.sizes.split(',').some(x=>x.trim())&&!dSize)return toast('Please choose a size');
-    addToCart(dP.id,dSize)}
+    addToCart(dP.id,dSize);
+  }
+  if(e.target.id==='dBuy'){
+    if(dP.sizes.split(',').some(x=>x.trim())&&!dSize)return toast('Please choose a size');
+    cart=[{id:dP.id,size:dSize,q:1}];saveCart();renderCart();closeDetail();
+    $('cart').classList.add('open');$('orderBtn').click();
+  }
+  if(e.target.id==='dWhatsApp'){
+    if(dP.sizes.split(',').some(x=>x.trim())&&!dSize)return toast('Please choose a size');
+    sendWhatsAppOrder([{id:dP.id,size:dSize,q:1}]);
+  }
 });
 
 /* ===== 5. CART ===== */
 // BACKEND: send cart to your API / checkout endpoint instead of keeping it only in the browser.
 const ck=x=>x.id+'|'+(x.size||''); // one cart line per product + size
 function addToCart(id,size){const n={id,size:size||''},it=cart.find(x=>ck(x)===ck(n));it?it.q++:cart.push({id,size:n.size,q:1});saveCart();renderCart();toast('Added to cart')}
+const SENARA_ORDER_WHATSAPP='918113841677';
+function sendWhatsAppOrder(lines){
+  const valid=lines.map(x=>({...x,p:prod(x.id)})).filter(x=>x.p);
+  if(!valid.length)return toast('Your cart is empty');
+  const total=valid.reduce((sum,x)=>sum+x.p.price*x.q,0);
+  const message=[
+    'Hi Senara! I would like to place an order:',
+    '',
+    ...valid.map((x,i)=>`${i+1}. ${x.p.name} | Size: ${x.size||'Not selected'} | Qty: ${x.q} | ${inr(x.p.price*x.q)}`),
+    '',
+    `Total: ${inr(total)}`,
+    '',
+    'Please confirm availability and delivery details. Thank you!'
+  ].join('\n');
+  const url='https://wa.me/'+SENARA_ORDER_WHATSAPP+'?text='+encodeURIComponent(message);
+  window.open(url,'_blank','noopener,noreferrer');
+}
+$('waOrderBtn').onclick=()=>sendWhatsAppOrder(cart);
+
 function renderCart(){
   const items=cart.map(x=>({...x,p:prod(x.id)})).filter(x=>x.p);
   $('cartCount').textContent=items.reduce((a,x)=>a+x.q,0);
@@ -213,14 +282,15 @@ function placeOrder(){
 // BACKEND: every edit below calls save(); replace it with POST/PUT/DELETE requests.
 function renderAdmin(){
   const catOpts=sel=>db.categories.map(c=>`<option value="${esc(c.id)}" ${c.id===sel?'selected':''}>${esc(c.name)}</option>`).join('');
+  const prodOpts=sel=>db.products.map(p=>`<option value="${esc(p.id)}" ${p.id===sel?'selected':''}>${esc(p.name)}</option>`).join('');
   const kindOpts=sel=>Object.keys(SHAPES).map(k=>`<option ${k===sel?'selected':''}>${k}</option>`).join('');
   // BACKEND: load orders from your API instead of localStorage.
   const ordersPanel=`<div class="panel"><h3>Orders (${orders.length})</h3><p class="note">New orders appear here with the customer’s details.</p>${orders.length?orders.map((o,i)=>`<div class="row" style="align-items:flex-start"><div><b>#${esc(o.id)}</b> · ${esc(new Date(o.date).toLocaleString())}<br>${esc(o.customer.name)} · ${esc(o.customer.phone)}${o.customer.email?' · '+esc(o.customer.email):''}<br>${esc(o.customer.address)}, ${esc(o.customer.city||'')} ${esc(o.customer.pin||'')}<br>${o.items.map(x=>esc(x.name)+' ×'+x.q).join(', ')}<br><b>${inr(o.total)}</b></div><select data-ord="${i}">${['New','Packed','Shipped','Delivered'].map(t=>`<option ${t===o.status?'selected':''}>${t}</option>`).join('')}</select></div>`).join(''):'<p class="empty">No orders yet.</p>'}</div>`;
   $('adminBody').innerHTML=`
   ${ordersPanel}
-  <div class="panel"><h3>Shop</h3><div class="f"><input data-e="shop.name" value="${esc(db.shop.name)}" placeholder="Shop name"></div></div>
+  <div class="panel"><h3>Shop</h3><div class="f"><input data-e="shop.name" value="${esc(db.shop.name)}" placeholder="Shop name"></div><div class="f"><input data-e="shop.tagline" value="${esc(db.shop.tagline||'')}" placeholder="Tagline, e.g. Premium women’s clothing retailer"></div><div class="f"><input data-e="shop.phone" value="${esc(db.shop.phone||'')}" placeholder="WhatsApp / mobile (10 digits)"><input data-e="shop.address" value="${esc(db.shop.address||'')}" placeholder="Shop address"></div><div class="f"><input data-e="shop.map" value="${esc(db.shop.map||'')}" placeholder="Text to search on Google Maps"></div><div class="f"><textarea data-e="shop.story" rows="3" placeholder="Short brand text shown on the home page">${esc(db.shop.story||'')}</textarea></div></div>
   <div class="panel"><h3>Banners</h3><p class="note">Shown in the auto-scrolling hero.</p>
-    ${db.banners.map((b,i)=>`<div class="f"><input data-e="banners.${i}.title" value="${esc(b.title)}" placeholder="Title"><input data-e="banners.${i}.sub" value="${esc(b.sub)}" placeholder="Subtitle"><input type="color" data-e="banners.${i}.color" value="${esc(b.color)}"><select data-e="banners.${i}.kind">${kindOpts(b.kind)}</select><button class="btn ghost" data-del="banners.${i}">Delete</button></div>`).join('')}
+    ${db.banners.map((b,i)=>`<div class="f"><input data-e="banners.${i}.title" value="${esc(b.title)}" placeholder="Title"><input data-e="banners.${i}.sub" value="${esc(b.sub)}" placeholder="Subtitle"><input type="color" data-e="banners.${i}.color" value="${esc(b.color)}"><select data-e="banners.${i}.pid"><option value="">No model photo</option>${prodOpts(b.pid)}</select><select data-e="banners.${i}.kind">${kindOpts(b.kind)}</select><button class="btn ghost" data-del="banners.${i}">Delete</button></div>`).join('')}
     <button class="btn" data-new="banner">Add banner</button></div>
   <div class="panel"><h3>Categories</h3>
     ${db.categories.map((c,i)=>`<div class="f"><input data-e="categories.${i}.name" value="${esc(c.name)}"><select data-e="categories.${i}.kind">${kindOpts(c.kind)}</select><button class="btn ghost" data-del="categories.${i}">Delete</button></div>`).join('')}
@@ -247,7 +317,7 @@ $('adminBody').addEventListener('click',e=>{
   const d=e.target.dataset;
   if(d.rm){const [i,j]=d.rm.split('.');db.products[+i].gallery.splice(+j,1);save();renderAdmin();renderHome();return}
   if(d.del){const k=d.del.split('.');db[k[0]].splice(+k[1],1);save();renderAdmin();renderHome()}
-  if(d.new==='banner')db.banners.push({id:'b'+Date.now(),title:'New banner',sub:'Describe it',color:'#6B1F26',kind:'gown'});
+  if(d.new==='banner')db.banners.push({id:'b'+Date.now(),title:'New banner',sub:'Describe it',color:'#6B1F26',kind:'gown',pid:''});
   if(d.new==='category')db.categories.push({id:'c'+Date.now(),name:'New category',kind:'top'});
   if(d.new==='product')db.products.push({id:'p'+Date.now(),cat:(db.categories[0]||{}).id||'',name:'New product',price:599,color:'#6B1F26',img:'',gallery:[],sizes:'S, M, L, XL',desc:'',fabric:'',includes:'',ornament:''});
   if(d.new){save();renderAdmin();renderHome()}
