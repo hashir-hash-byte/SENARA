@@ -5,7 +5,7 @@
        put them in /images as dress3-1.jpg, dress3-2.jpg ... and set the "flat" count in the mk() line below.
    - Names, prices, sizes and descriptions below are SAMPLES written from the photos. The owner must confirm them.
    If the browser still shows old data after you edit this file, change DATA_VERSION (e.g. 'v5'). */
-const DATA_VERSION = 'v4';
+const DATA_VERSION = 'v5';
 
 function seed(){
   const cats=[['women','Women’s Wear','gown']];
@@ -19,11 +19,11 @@ function seed(){
   });
 
   return{
-    shop:{name:'Senara'},
-    banners:[
-      {id:'b1',title:'Festive collection',sub:'Kurta sets for every occasion',color:'#6B1F26',kind:'gown'},
-      {id:'b2',title:'New arrivals',sub:'Fresh styles, just in',color:'#3B4A6B',kind:'top'},
-      {id:'b3',title:'Everyday elegance',sub:'Easy pieces you will love',color:'#2F5D50',kind:'gown'}],
+    shop:{name:'Senara',tagline:'Premium women’s clothing retailer',phone:'8088809084',address:'2nd floor, Smart City Building, Vittla',map:'Smart City Building, Vittla',story:'Women’s wear and kids’ styles for every day and every occasion.'},
+    banners:[ // pid = which product's model photo stands in front of the headline
+      {id:'b1',title:'Festive collection',sub:'Kurta sets for every occasion',color:'#2F5D50',kind:'gown',pid:'p4'},
+      {id:'b2',title:'New arrivals',sub:'Fresh styles, just in',color:'#3B4A6B',kind:'gown',pid:'p3'},
+      {id:'b3',title:'Everyday elegance',sub:'Easy pieces you will love',color:'#6B1F26',kind:'gown',pid:'p5'}],
     categories:cats.map(([id,name,kind])=>({id,name,kind})),
     products:[
       mk(1,'Striped embroidered shirt set',999,'#6B1F26','Relaxed striped shirt with purple embroidered panels, styled with wide-leg pants.','Shirt, pants','Purple embroidery panels'),
